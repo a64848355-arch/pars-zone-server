@@ -1,4 +1,3 @@
-
 export class GameRoom {
   constructor(ctx) {
     this.ctx = ctx;
@@ -16,6 +15,7 @@ export class GameRoom {
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
+
     server.accept();
 
     let player = null;
@@ -48,6 +48,7 @@ export class GameRoom {
           player.x = Number(data.x) || 0;
           player.y = Number(data.y) || 0;
           player.z = Number(data.z) || 0;
+
           this.broadcast();
         }
       } catch (error) {
@@ -82,7 +83,6 @@ export class GameRoom {
       try {
         socket.send(message);
       } catch (error) {
-        // اتصال بسته شده است
       }
     }
   }
