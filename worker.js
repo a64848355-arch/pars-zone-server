@@ -18,7 +18,7 @@ export class GameRoom {
       try {
         const data = JSON.parse(event.data);
 
-        if (data.type === "join") {
+        if (url.pathname === "/" && request.headers.get("Upgrade") !== "websocket") {
           player = {
             id: String(data.id || crypto.randomUUID()),
             name: String(data.name || "بازیکن").slice(0, 24),
