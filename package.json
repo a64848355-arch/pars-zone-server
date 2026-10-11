@@ -1,0 +1,12 @@
+{
+  "name": "pars-zone-server",
+  "version": "1.0.0",
+  "description": "Pars Zone multiplayer server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
