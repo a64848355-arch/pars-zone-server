@@ -1,3 +1,4 @@
+
 export class GameRoom {
   constructor(ctx) {
     this.ctx = ctx;
@@ -6,10 +7,15 @@ export class GameRoom {
   }
 
   async fetch(request) {
+    if (request.headers.get("Upgrade") !== "websocket") {
+      return new Response("WebSocket connection required", {
+        status: 426
+      });
+    }
+
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
-
     server.accept();
 
     let player = null;
@@ -18,7 +24,7 @@ export class GameRoom {
       try {
         const data = JSON.parse(event.data);
 
-        if (url.pathname === "/" && request.headers.get("Upgrade") !== "websocket") {
+        if (data.type === "join") {
           player = {
             id: String(data.id || crypto.randomUUID()),
             name: String(data.name || "بازیکن").slice(0, 24),
@@ -45,7 +51,10 @@ export class GameRoom {
           this.broadcast();
         }
       } catch (error) {
-        server.send(JSON.stringify({ type: "error", message: "پیام نامعتبر" }));
+        server.send(JSON.stringify({
+          type: "error",
+          message: "پیام نامعتبر"
+        }));
       }
     });
 
@@ -57,7 +66,10 @@ export class GameRoom {
       }
     });
 
-    return new Response(null, { status: 101, webSocket: client });
+    return new Response(null, {
+      status: 101,
+      webSocket: client
+    });
   }
 
   broadcast() {
@@ -69,7 +81,9 @@ export class GameRoom {
     for (const socket of this.connections.values()) {
       try {
         socket.send(message);
-      } catch (error) {}
+      } catch (error) {
+        // اتصال بسته شده است
+      }
     }
   }
 }
@@ -78,7 +92,10 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === "/") {
+    if (
+      url.pathname === "/" &&
+      request.headers.get("Upgrade") !== "websocket"
+    ) {
       return new Response("Pars Zone Server is running!");
     }
 
