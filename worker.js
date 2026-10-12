@@ -6,10 +6,8 @@ export class GameRoom {
   }
 
   async fetch(request) {
-    if (request.headers.get("Upgrade") !== "websocket") {
-      return new Response("WebSocket connection required", {
-        status: 426
-      });
+    if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+      return new Response("Pars Zone WebSocket Server is running!");
     }
 
     const pair = new WebSocketPair();
@@ -25,6 +23,11 @@ export class GameRoom {
         const data = JSON.parse(event.data);
 
         if (data.type === "join") {
+          if (player) {
+            this.players.delete(player.id);
+            this.connections.delete(player.id);
+          }
+
           player = {
             id: String(data.id || crypto.randomUUID()),
             name: String(data.name || "بازیکن").slice(0, 24),
@@ -59,13 +62,17 @@ export class GameRoom {
       }
     });
 
-    server.addEventListener("close", () => {
+    const removePlayer = () => {
       if (player) {
         this.players.delete(player.id);
         this.connections.delete(player.id);
+        player = null;
         this.broadcast();
       }
-    });
+    };
+
+    server.addEventListener("close", removePlayer);
+    server.addEventListener("error", removePlayer);
 
     return new Response(null, {
       status: 101,
@@ -79,10 +86,12 @@ export class GameRoom {
       players: Array.from(this.players.values())
     });
 
-    for (const socket of this.connections.values()) {
+    for (const [id, socket] of this.connections) {
       try {
         socket.send(message);
       } catch (error) {
+        this.connections.delete(id);
+        this.players.delete(id);
       }
     }
   }
@@ -94,7 +103,7 @@ export default {
 
     if (
       url.pathname === "/" &&
-      request.headers.get("Upgrade") !== "websocket"
+      request.headers.get("Upgrade")?.toLowerCase() !== "websocket"
     ) {
       return new Response("Pars Zone Server is running!");
     }
